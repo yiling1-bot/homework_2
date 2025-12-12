@@ -1,0 +1,145 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{placeins}
+
+
+\title{偏微分方程数值验证：有限差分、谱方法与PINN的实验设计与结果}
+\author{（陈关棠 2024210642）}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+本文针对稳态（Laplace/Poisson）、传导（Heat）与波动（Wave）三类偏微分方程，在直角与柱坐标系下进行数值实验，对比解析/参考解并分析误差与稳定性。主要实现基于有限差分（FDM）；同时给出谱方法与物理信息神经网络（PINN）的设计思路，用于后续扩展。图像均由当前脚本生成，包含数值解、解析解以及误差分布。
+\end{abstract}
+
+\section{问题与定解条件}
+\subsection{直角坐标，齐次边界}
+\begin{itemize}
+  \item Laplace: $u_{xx}=0$, $u(0)=u(1)=0$, 解析解 $u=0$。
+  \item Heat: $u_t= D u_{xx}$, $u(x,0)=\sin(\pi x)$, $u(0,t)=u(1,t)=0$, 解析解 $u=e^{-\pi^2Dt}\sin(\pi x)$。
+  \item Wave: $u_{tt}=c^2 u_{xx}$, $u(x,0)=\sin(\pi x)$, $u_t(x,0)=0$, 边界 0，解析解 $u=\sin(\pi x)\cos(\pi c t)$。
+\end{itemize}
+
+\subsection{直角坐标，非齐次边界/方程}
+\begin{itemize}
+  \item Poisson: $u_{xx}=-2$, $u(0)=0$, $u(1)=1$, 解析解 $u=-x^2+2x$。
+  \item Heat（非齐次边界）: $u_t=D u_{xx}$, $u(0,t)=0$, $u(1,t)=1$, 初值 $\sin(\pi x)$，稳态 $u_s=x$。
+  \item Wave（边界激励）: $u_{tt}=c^2 u_{xx}$, $u(0,t)=u(1,t)=\sin(\omega t)$, 初值/初速为0；当前用模态近似 $u\approx \sin(\omega t)\sin(\pi x)$ 作为参考，需以特征模态展开作严格基准。
+\end{itemize}
+
+\subsection{柱坐标轴对称}
+\begin{itemize}
+  \item Laplace: $\frac{1}{r}(r u_r)_r + u_{zz}=0$, 边界 $u(1,z)=0$, $u(r,1)=0$, $u(r,0)=\sin(\pi r)$, 轴对称 $u_r|_{r=0}=0$；参考场使用人为构造的 $u_{\mathrm{ref}}=\sin(\pi z)(1-r^2)$。
+  \item Heat: $u_t=D[\frac{1}{r}u_r+u_{rr}+u_{zz}]$, 初值 $\sin(\pi r)\sin(\pi z)$，解析 $u=e^{-2\pi^2Dt}\sin(\pi r)\sin(\pi z)$。
+  \item Wave: $u_{tt}=c^2[\frac{1}{r}u_r+u_{rr}+u_{zz}]$, 初值 $\sin(\pi r)\sin(\pi z)$，初速0，解析 $u=\sin(\pi r)\sin(\pi z)\cos(\pi\sqrt{2}ct)$。
+\end{itemize}
+
+\section{数值方法}
+\subsection{有限差分（已实现）}
+空间二阶中心差分；时间离散：显式欧拉（热）、中心差分（波）、Crank--Nicolson（非齐次热）。稳定性：热方程 Courant $\le 0.5$；波动方程 CFL $\le 1$；Crank--Nicolson 无条件稳定但步长影响精度。柱坐标在 $r=0$ 处采用对称或 L'H\^opital 近似。
+
+\subsection{谱方法}
+适用于规则域（本项目的直角 1D 问题）。选正弦基傅里叶伪谱或 Galerkin：
+\[
+\widehat{u}_{k}^{n+1} = \widehat{u}_{k}^{n} - D k^2 \Delta t\, \widehat{u}_{k}^{n} \quad (\text{热方程})
+\]
+波动方程则为每个模态进行显式中心差分推进。谱方法空间误差呈指数收敛，可与 FDM 二阶精度对照收敛曲线与误差。
+在直角 1D 热方程上，谱方法（正弦基伪谱）空间误差随模式数呈指数衰减；网格差分为二阶。计划并列绘制两条误差-网格（或模式数）曲线：谱方法（斜率接近指数）与网格差分（斜率 ≈ 2）。时间推进可用显式欧拉/稳定步长或模态精确推进。
+
+\subsection{PINN}
+构造损失
+\[
+L = \lambda_f \|f_\theta\|_{PDE}^2 + \lambda_b \|u_\theta - g\|_{BC}^2 + \lambda_0 \|u_\theta - u_0\|_{IC}^2
+\]
+其中 $f_\theta$ 为 PDE 残差，$g$、$u_0$ 为边界与初值。采样内点与边界点训练网络（TF/PyTorch），输出与 FDM/谱法对比误差和损失收敛。可在本项目的 1D 热/波方程上先行实验，作为高阶或稀疏数据场景的补充。
+在直角 1D 热/波方程上采样内点与边界/初值点，构造损失函数
+\[
+L=\lambda_f\lVert f_\theta\rVert^2+\lambda_b\lVert u_\theta-g\rVert^2+\lambda_0\lVert u_\theta-u_0\rVert^2 .
+\]
+训练后输出两类曲线：1）损失随迭代下降；2）PINN 预测与解析/网格差分在同一测试集上的误差对比。可作为稀疏数据场景的 AI 补充。
+
+
+\section{结果与误差分析(基于当前 FDM 实现)}
+\begin{itemize}
+  \item 直角齐次（Problem 1）：Laplace 误差 $0$；Heat 误差 $1.47\times 10^{-5}$（Courant=0.5）；Wave 误差 $3.98\times 10^{-6}$（CFL=0.05），数值与解析基本重合。
+  \item 直角非齐次（Problem 2）：Poisson 误差 $\mathcal{O}(10^{-14})$；非齐次 Heat 在 $t=2.0$ 时误差 $5.04\times 10^{-2}$，可通过延长时间或加密网格进一步逼近稳态 $u=x$；制造解波动方程误差 $3.10\times 10^{-5}$。
+  \item 柱坐标轴对称（Problem 3）：制造解 Poisson 误差 $1.07\times 10^{-3}$；热方程误差 $1.57\times 10^{-1}$，波动方程误差 $9.16\times 10^{-2}$，可通过更细网格/更小时间步改进。
+\end{itemize}
+\textbf{改进方向}：对非齐次热和柱坐标热/波，可减小 $\Delta t$、加密网格或采用更高阶时间离散（如 Crank--Nicolson 或 ADI）；谱方法和 PINN 引入后，可验证高阶收敛与数据驱动求解效果。
+
+\section{图像与数值对比}
+\clearpage
+\FloatBarrier
+\subsection{直角坐标齐次（Problem 1）}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.6\textwidth]{Problem1_齐次边界齐次方程/01_steady_laplace_compare.png}
+  \includegraphics[width=0.6\textwidth]{Problem1_齐次边界齐次方程/02_heat_equation_compare.png}
+  \caption{齐次边界的 Laplace 与 Heat 方程数值-解析对比。}
+\end{figure}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.6\textwidth]{Problem1_齐次边界齐次方程/03_wave_equation_compare.png}
+  \caption{齐次边界的波动方程数值-解析对比。}
+\end{figure}
+
+\FloatBarrier
+\subsection{直角坐标非齐次（Problem 2）}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.6\textwidth]{Problem2_非齐次边界非齐次方程/01_poisson_compare.png}
+  \includegraphics[width=0.6\textwidth]{Problem2_非齐次边界非齐次方程/02_heat_inhomogeneous_compare.png}
+  \includegraphics[width=0.6\textwidth]{Problem2_非齐次边界非齐次方程/03_wave_forcing_compare.png}
+  \caption{非齐次边界/方程：Poisson、非齐次热方程、制造解波动方程的数值-解析对比。}
+\end{figure}
+
+\subsection{柱坐标轴对称（Problem 3）}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.6\textwidth]{Problem3_柱坐标系/01_cyl_steady_3d_compare.png}
+  \includegraphics[width=0.6\textwidth]{Problem3_柱坐标系/01_cyl_steady_contour.png}
+  \caption{柱坐标制造解 Poisson：数值场与参考场对比及误差分布。}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.6\textwidth]{Problem3_柱坐标系/02_cyl_heat_contour.png}
+  \includegraphics[width=0.6\textwidth]{Problem3_柱坐标系/03_cyl_wave_contour.png}
+  \caption{柱坐标轴对称热/波方程：数值解与解析解误差分布。}
+\end{figure}
+\clearpage
+\FloatBarrier
+
+\section{改进计划}
+\begin{enumerate}
+  \item 修复/统一图名与说明，确保编码无误（已在代码中替换为 ASCII 命名）。
+  \item 为边界激励波动方程给出严格模态展开解析解以做对比。
+  \item 补充谱方法算例，与 FDM 收敛曲线并列展示。
+  \item 柱坐标稳态采用可分离的 Bessel 模态解析解或明确“参考解”仅为制造解。
+\end{enumerate}
+
+\section{代码与输出}
+运行脚本：
+\begin{verbatim}
+python Problem1_齐次边界齐次方程/problem1_homogeneous.py
+python Problem2_非齐次边界非齐次方程/problem2_inhomogeneous.py
+python Problem3_柱坐标系/problem3_cylindrical.py
+\end{verbatim}
+输出图像（示例）：\texttt{01\_steady\_laplace\_compare.png},
+\texttt{02\_heat\_equation\_compare.png}, \texttt{03\_wave\_equation\_compare.png} 等。
+
+\section{结论}
+在满足稳定性条件的网格与步长下，FDM 可为三类方程提供与解析解一致的结果。要满足更高精度与更复杂边界/源项验证，应补充谱方法与 PINN，对非齐次波动和柱坐标稳态提供严格解析基准。
+
+\begin{thebibliography}{9}
+\bibitem{leveque} R. LeVeque, \emph{Finite Difference Methods for Ordinary and Partial Differential Equations}, SIAM, 2007.
+\bibitem{trefethen} L. N. Trefethen, \emph{Spectral Methods in MATLAB}, SIAM, 2000.
+\bibitem{raissi} M. Raissi, P. Perdikaris, G. Karniadakis, ``Physics-informed neural networks,'' J. Comput. Phys., 2019.
+\end{thebibliography}
+
+\end{document}
