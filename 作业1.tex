@@ -1,0 +1,181 @@
+\documentclass[UTF8,12pt]{ctexart}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+
+\newcommand{\j}{\mathrm{j}}
+\newcommand{\e}{\mathrm{e}}
+
+\title{矩形波导中的电磁波传播求解（期中作业）\\TE/TM 模式、截止频率与群速度/相速度}
+\author{姓名：陈关棠\quad 学号：2024210642}}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{引言与模型}
+考虑理想金属（PEC）矩形波导，截面为 $0<x<a,\,0<y<b$，沿 $z$ 方向均匀延伸，内部充满均匀介质 $(\varepsilon,\mu)$。采用时间谐波 $\e^{\j\omega t}$，并设沿 $z$ 的传播形式为 $\e^{-\j\beta z}$。
+
+无源频域麦克斯韦方程：
+\begin{align}
+\nabla\times \bm{E} &= -\j\omega\mu\,\bm{H},\qquad
+\nabla\times \bm{H} = \j\omega\varepsilon\,\bm{E},\\
+\nabla\cdot \bm{E} &= 0,\qquad
+\nabla\cdot \bm{H} = 0,
+\end{align}
+定义介质波数 $k=\omega\sqrt{\mu\varepsilon}$。
+
+\paragraph{边界条件（PEC）}
+金属壁面上电场切向分量为零：$\bm{E}_t=0$。
+
+\section{TE/TM 模式与求解思路}
+把场分成横向与纵向：$\bm{E}=\bm{E}_t+\hat{\bm{z}}E_z,\ \bm{H}=\bm{H}_t+\hat{\bm{z}}H_z$。
+常见导波模式分两类：
+\[
+\text{TE: }E_z=0,\ H_z\neq 0;\qquad
+\text{TM: }H_z=0,\ E_z\neq 0.
+\]
+波导问题的常用做法是：先求纵向分量（TE 求 $H_z$，TM 求 $E_z$），再由麦克斯韦方程得到其余分量。
+
+\paragraph{纵向分量满足的二维方程（教材常用结论）}
+在均匀波导中可得到
+\begin{equation}
+\left(\frac{\partial^2}{\partial x^2}+\frac{\partial^2}{\partial y^2}+k_c^2\right)\{H_z \text{ 或 } E_z\}=0,
+\qquad
+\boxed{\ \beta^2=k^2-k_c^2\ },
+\end{equation}
+其中 $k_c$ 为截止波数。
+
+\section{TE 模式（$E_z=0$）}
+\subsection{边界条件转化}
+TE 模下 $\bm{E}_t$ 由 $H_z$ 的横向变化产生；结合 $\bm{E}_t=0$ 可得到
+\[
+\boxed{\ \frac{\partial H_z}{\partial n}=0\ \ \text{在四壁上}\ }
+\]
+（即 $H_z$ 满足 Neumann 边界条件）。
+
+\subsection{分离变量解}
+设 $H_z=X(x)Y(y)$，结合边界条件可得到余弦型解：
+\begin{equation}
+\boxed{
+H_z=H_0\cos\left(\frac{m\pi x}{a}\right)\cos\left(\frac{n\pi y}{b}\right)\e^{-\j\beta z}
+}
+\end{equation}
+其中 $m,n=0,1,2,\dots$ 且 $(m,n)\neq(0,0)$。
+
+对应截止波数：
+\begin{equation}
+\boxed{
+k_c^2=\left(\frac{m\pi}{a}\right)^2+\left(\frac{n\pi}{b}\right)^2
+}
+\end{equation}
+
+\subsection{其余场分量（直接套用的表达式）}
+\[
+\boxed{
+\begin{aligned}
+E_x &= \frac{\j\omega\mu}{k_c^2}\frac{\partial H_z}{\partial y},\quad
+E_y = -\frac{\j\omega\mu}{k_c^2}\frac{\partial H_z}{\partial x},\quad E_z=0,\\
+H_x &= -\frac{\j\beta}{k_c^2}\frac{\partial H_z}{\partial x},\quad
+H_y = -\frac{\j\beta}{k_c^2}\frac{\partial H_z}{\partial y}.
+\end{aligned}}
+\]
+
+\section{TM 模式（$H_z=0$）}
+\subsection{边界条件转化}
+TM 模中由 PEC 条件可推出
+\[
+\boxed{\ E_z=0\ \ \text{在四壁上}\ }
+\]
+（Dirichlet 边界条件）。
+
+\subsection{分离变量解}
+因此 $E_z$ 为正弦型：
+\begin{equation}
+\boxed{
+E_z=E_0\sin\left(\frac{m\pi x}{a}\right)\sin\left(\frac{n\pi y}{b}\right)\e^{-\j\beta z}
+}
+\end{equation}
+其中 $m,n=1,2,3,\dots$。
+
+截止波数同样为
+\[
+\boxed{
+k_c^2=\left(\frac{m\pi}{a}\right)^2+\left(\frac{n\pi}{b}\right)^2
+}.
+\]
+
+\subsection{其余场分量}
+\[
+\boxed{
+\begin{aligned}
+E_x &= -\frac{\j\beta}{k_c^2}\frac{\partial E_z}{\partial x},\quad
+E_y = -\frac{\j\beta}{k_c^2}\frac{\partial E_z}{\partial y},\quad H_z=0,\\
+H_x &= -\frac{\j\omega\varepsilon}{k_c^2}\frac{\partial E_z}{\partial y},\quad
+H_y = \frac{\j\omega\varepsilon}{k_c^2}\frac{\partial E_z}{\partial x}.
+\end{aligned}}
+\]
+
+\section{验证：电场与磁场不能同时为横波（无 TEM 模式）}
+TEM 的定义是 $E_z=0$ 且 $H_z=0$。下面说明在空心单导体矩形波导中 TEM 只能得到零场。
+
+若 $H_z=0$，由 $\nabla\times\bm{E}=-\j\omega\mu\bm{H}$ 取 $z$ 分量得
+\[
+\frac{\partial E_y}{\partial x}-\frac{\partial E_x}{\partial y}=0
+\Rightarrow \bm{E}_t=-\nabla_t\phi.
+\]
+再由 $\nabla\cdot\bm{E}=0$ 且 $E_z=0$ 得
+\[
+\nabla_t\cdot\bm{E}_t=0 \Rightarrow \nabla_t^2\phi=0.
+\]
+PEC 边界上 $\bm{E}_t=0$，等价于 $\nabla_t\phi=0$，从而边界上 $\phi$ 为常数。对矩形这种单连通区域，满足拉普拉斯方程且边界为常数的解只能是全域常数，因此 $\bm{E}_t=0$；再代回麦克斯韦方程可知 $\bm{H}_t=0$，最终只有零场。
+\[
+\boxed{\ \text{矩形单导体波导不存在非零 TEM 模式，因此 }\bm{E},\bm{H}\text{不能同时为横波}\ }.
+\]
+
+\section{截止频率}
+由 $\beta^2=k^2-k_c^2$ 可知：当 $k<k_c$ 时 $\beta$ 变为虚数，沿 $z$ 方向不传播而衰减，因此截止条件为 $k=k_c$。
+\[
+\omega_c=\frac{k_c}{\sqrt{\mu\varepsilon}},\qquad f_c=\frac{\omega_c}{2\pi}.
+\]
+代入 $k_c$：
+\begin{equation}
+\boxed{
+f_c=\frac{1}{2\sqrt{\mu\varepsilon}}
+\sqrt{\left(\frac{m}{a}\right)^2+\left(\frac{n}{b}\right)^2}
+}
+\end{equation}
+真空中 $1/\sqrt{\mu\varepsilon}=c$，则
+\[
+\boxed{
+f_c=\frac{c}{2}\sqrt{\left(\frac{m}{a}\right)^2+\left(\frac{n}{b}\right)^2}.
+}
+\]
+
+\section{群速度与相速度关系（相速度可大于光速）}
+色散关系：
+\[
+\beta(\omega)=\sqrt{\omega^2\mu\varepsilon-k_c^2},\qquad (\omega>\omega_c).
+\]
+相速度 $v_p=\omega/\beta$：
+\[
+v_p=\frac{1}{\sqrt{\mu\varepsilon}}\cdot\frac{1}{\sqrt{1-(\omega_c/\omega)^2}}
+\Rightarrow \boxed{v_p> \frac{1}{\sqrt{\mu\varepsilon}} }.
+\]
+群速度 $v_g=\dd\omega/\dd\beta$，由求导可得
+\[
+v_g=\frac{1}{\sqrt{\mu\varepsilon}}\sqrt{1-(\omega_c/\omega)^2}
+\Rightarrow \boxed{v_g< \frac{1}{\sqrt{\mu\varepsilon}} }.
+\]
+并且两者满足一个很好记的结论：
+\[
+\boxed{\,v_p v_g=\frac{1}{\mu\varepsilon}\,}.
+\]
+在真空中 $1/\sqrt{\mu\varepsilon}=c$，因此 $v_p>c$ 而 $v_g<c$。相速度大于光速不代表信息超光速传播，通常与能量/信息相关的是群速度。
+
+\section{结论}
+本文从麦克斯韦方程出发，给出了矩形波导中 TE/TM 两类模式的纵向分量形式与其余分量的通用表达式；证明了空心矩形单导体波导不存在 TEM 模式；推导了模式截止频率；并给出群速度、相速度的关系 $v_p v_g=1/(\mu\varepsilon)$，说明相速度可以大于光速而群速度小于光速。
+
+\end{document}
